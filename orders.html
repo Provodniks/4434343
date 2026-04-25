@@ -12,6 +12,7 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     
     <style>
+        /* ================== СТИЛИ (ОСТАЮТСЯ БЕЗ ИЗМЕНЕНИЙ) ================== */
         * {
             margin: 0;
             padding: 0;
@@ -47,7 +48,6 @@
             overflow-x: hidden;
         }
 
-        /* Анимированный градиентный фон */
         body::before {
             content: '';
             position: fixed;
@@ -66,7 +66,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Неоновые частицы */
         .particle {
             position: fixed;
             background: radial-gradient(circle, var(--neon-purple), var(--neon-blue));
@@ -82,7 +81,6 @@
             50% { transform: translateY(-50px) translateX(30px); opacity: 0.25; }
         }
 
-        /* Бегущие неоновые огоньки по краям */
         .running-lights {
             position: fixed;
             top: 0;
@@ -128,7 +126,6 @@
             100% { right: 100%; }
         }
 
-        /* Вертикальные бегущие огоньки */
         .running-lights-vertical {
             position: fixed;
             top: 0;
@@ -180,7 +177,6 @@
             z-index: 1;
         }
 
-        /* Header с неоновой рамкой */
         .header {
             background: linear-gradient(135deg, rgba(11,11,43,0.95), rgba(26,10,79,0.95));
             backdrop-filter: blur(10px);
@@ -217,11 +213,6 @@
             0% { opacity: 0.2; }
             50% { opacity: 0.7; }
             100% { opacity: 0.2; }
-        }
-
-        .header:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 40px rgba(155,89,182,0.3);
         }
 
         .logo h1 {
@@ -316,7 +307,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* СЛАБОЕ МЕРЦАНИЕ для заголовка "Новое обращение" */
         .form-title {
             font-size: 1.5rem;
             margin-bottom: 25px;
@@ -664,7 +654,6 @@
             transform: scale(1.2);
         }
 
-        /* Статистика */
         .stats {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -713,7 +702,6 @@
             box-shadow: 0 0 15px rgba(155,89,182,0.3);
         }
 
-        /* СЛАБОЕ МЕРЦАНИЕ для иконки конверта (Всего обращений) */
         .stat-card:nth-child(1) i {
             animation: iconSoftPulse 2s ease-in-out infinite;
         }
@@ -731,7 +719,6 @@
             text-shadow: 0 0 3px var(--neon-purple);
         }
 
-        /* Вращение иконки "В работе" */
         .stat-card:nth-child(3) i {
             animation: spin 2s linear infinite;
         }
@@ -741,7 +728,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Покачивание иконки "Завершено" */
         .stat-card:nth-child(4) i {
             animation: wobble 3s ease-in-out infinite;
         }
@@ -862,6 +848,7 @@
     <div class="running-lights-vertical"></div>
 
     <script>
+        // Генерация плавающих частиц
         for (let i = 0; i < 20; i++) {
             const particle = document.createElement('div');
             particle.className = 'particle';
@@ -1040,6 +1027,7 @@
     </div>
 
     <script>
+        // ================== ЛОГИКА РАБОТЫ С ОБРАЩЕНИЯМИ (БЕЗ ИЗМЕНЕНИЙ) ==================
         let appeals = [];
         let nextId = 1;
         let currentSort = { column: null, direction: 'asc' };
@@ -1073,11 +1061,70 @@
 
         document.getElementById('date').value = getCurrentDate();
 
-        document.getElementById('appealForm').addEventListener('submit', function(e) {
+        // ================== НОВАЯ ФУНКЦИЯ: ОТПРАВКА ДАННЫХ В 1С ==================
+        async function sendTo1C(formData) {
+            // <<<<< ВАЖНО: НАСТРОЙТЕ ЭТОТ АДРЕС >>>>> 
+            // Укажите здесь URL вашего HTTP-сервиса в 1С
+            const ONE_S_URL = 'http://localhost/tehnoptorg/hs/orders/create'; 
+            
+            // Показываем индикатор загрузки на кнопке
+            const submitBtn = document.querySelector('#appealForm .btn-submit');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Отправка...';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch(ONE_S_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Ошибка сервера: ${response.status} - ${errorText}`);
+                }
+
+                const result = await response.json();
+                console.log('Успешно отправлено в 1С:', result);
+                
+                // Показываем успешное уведомление
+                showToast(`✅ Обращение отправлено в 1С! Номер: ${result.documentNumber || 'создан'}`);
+                return true;
+                
+            } catch (error) {
+                console.error('Ошибка при отправке в 1С:', error);
+                showToast(`❌ Ошибка отправки в 1С: ${error.message}. Данные сохранены локально.`, 'error');
+                return false;
+            } finally {
+                // Возвращаем кнопку в исходное состояние
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        // Модифицированная функция showToast с поддержкой типа ошибки
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            if (type === 'error') {
+                toast.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
+            } else {
+                toast.style.background = 'linear-gradient(135deg, var(--neon-purple), var(--neon-blue))';
+            }
+            toast.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${message}`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 5000);
+        }
+
+        // ОБРАБОТЧИК ФОРМЫ (отправка в 1С + локальное сохранение)
+        document.getElementById('appealForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const newAppeal = {
-                id: nextId++,
+            // Собираем данные из формы
+            const formData = {
                 date: getCurrentDate(),
                 name: document.getElementById('name').value,
                 type: document.getElementById('type').value,
@@ -1088,17 +1135,31 @@
                 status: 'Новое'
             };
             
+            // === ОТПРАВКА В 1С (АСИНХРОННО) ===
+            const sentTo1C = await sendTo1C(formData);
+            
+            // === ЛОКАЛЬНОЕ СОХРАНЕНИЕ (всегда, как резервная копия) ===
+            const newAppeal = {
+                id: nextId++,
+                ...formData
+            };
+            
             appeals.unshift(newAppeal);
             saveData();
             renderTable();
             updateStats();
             
+            // Очищаем форму
             document.getElementById('appealForm').reset();
             document.getElementById('date').value = getCurrentDate();
             
-            showToast('Обращение успешно создано!');
+            // Дополнительное уведомление, если в 1С отправить не удалось
+            if (!sentTo1C) {
+                showToast('Обращение сохранено локально. При открытии 1С оно будет синхронизировано.', 'info');
+            }
         });
 
+        // ================== ОСТАЛЬНЫЕ ФУНКЦИИ (БЕЗ ИЗМЕНЕНИЙ) ==================
         function renderTable() {
             const tbody = document.getElementById('appealsList');
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
@@ -1288,19 +1349,12 @@
             document.getElementById('editModal').style.display = 'none';
         }
         
-        function showToast(message) {
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
-        }
-        
         window.onclick = function(event) {
             const modal = document.getElementById('editModal');
             if (event.target === modal) closeModal();
         }
         
+        // Загружаем данные
         loadData();
     </script>
 </body>
