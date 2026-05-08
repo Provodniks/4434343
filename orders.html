@@ -12,8 +12,11 @@
     <!-- SheetJS (XLSX) для экспорта в Excel -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     
+    <!-- Яндекс Карты API -->
+    <script src="https://api-maps.yandex.ru/2.1/?apikey=addf3b8e-62a9-44e0-93bd-9991be329327&lang=ru_RU"></script>
+    
     <style>
-        /* ================== СТИЛИ (ОСТАЮТСЯ БЕЗ ИЗМЕНЕНИЙ) ================== */
+        /* ================== СТИЛИ ================== */
         * {
             margin: 0;
             padding: 0;
@@ -283,6 +286,7 @@
             display: grid;
             grid-template-columns: 1fr 1.5fr;
             gap: 30px;
+            margin-bottom: 30px;
         }
 
         .form-card {
@@ -403,6 +407,72 @@
         .btn-submit:hover {
             transform: scale(1.02);
             box-shadow: 0 0 20px var(--neon-purple);
+        }
+
+        /* Стили карты */
+        .map-card {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(5px);
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            animation: fadeInUp 0.5s ease 0.15s both;
+            position: relative;
+            border: 1px solid rgba(155,89,182,0.3);
+            margin-bottom: 30px;
+        }
+
+        .map-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--neon-cyan);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .map-title {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: var(--primary);
+            border-left: 4px solid var(--neon-cyan);
+            padding-left: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .map-title i {
+            color: var(--neon-cyan);
+            text-shadow: 0 0 3px var(--neon-cyan);
+        }
+
+        .map-container {
+            width: 100%;
+            height: 350px;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 2px solid rgba(155,89,182,0.3);
+            transition: var(--transition);
+        }
+
+        .map-container:hover {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+        }
+
+        .warehouse-address {
+            margin-top: 12px;
+            padding: 10px 15px;
+            background: linear-gradient(135deg, rgba(155,89,182,0.1), rgba(52,152,219,0.1));
+            border-radius: 15px;
+            text-align: center;
+            font-weight: 500;
+            color: var(--text-dark);
+            border: 1px dashed var(--neon-purple);
+        }
+
+        .warehouse-address i {
+            color: var(--neon-cyan);
+            margin-right: 8px;
         }
 
         .table-card {
@@ -841,6 +911,9 @@
             .form-row {
                 grid-template-columns: 1fr;
             }
+            .map-container {
+                height: 280px;
+            }
         }
     </style>
 </head>
@@ -892,6 +965,20 @@
                 <i class="fas fa-check-circle"></i>
                 <div class="stat-value" id="doneCount">0</div>
                 <div class="stat-label">Завершено</div>
+            </div>
+        </div>
+
+        <!-- КАРТА СКЛАДА -->
+        <div class="map-card">
+            <div class="map-title">
+                <i class="fas fa-warehouse"></i> 
+                <span>Наш склад: г. Екатеринбург, ул. Ленина, 10</span>
+            </div>
+            <div id="warehouseMap" class="map-container"></div>
+            <div class="warehouse-address">
+                <i class="fas fa-map-marker-alt"></i> 
+                <strong>Адрес склада самовывоза и отгрузки:</strong> г. Екатеринбург, улица Ленина, дом 10
+                <br><small><i class="fas fa-clock"></i> Режим работы: Пн-Пт 9:00 - 19:00, Сб 10:00 - 16:00</small>
             </div>
         </div>
 
@@ -1028,7 +1115,63 @@
     </div>
 
     <script>
-        // ================== ЛОГИКА РАБОТЫ С ОБРАЩЕНИЯМИ (БЕЗ ИЗМЕНЕНИЙ) ==================
+        // ================== ИНИЦИАЛИЗАЦИЯ КАРТЫ ==================
+        let myMap = null;
+        
+        function initMap() {
+            try {
+                // Координаты склада: ул. Ленина, 10, Екатеринбург
+                // Уточненные координаты центра Екатеринбурга (Ленина, 10)
+                const warehouseCoords = [56.8380, 60.6055];
+                
+                myMap = new ymaps.Map('warehouseMap', {
+                    center: warehouseCoords,
+                    zoom: 17,
+                    controls: ['zoomControl', 'fullscreenControl']
+                });
+                
+                // Создаем кастомную метку для склада
+                const warehousePlacemark = new ymaps.Placemark(warehouseCoords, {
+                    hintContent: 'Склад ТехноОптТорг',
+                    balloonContent: `
+                        <div style="font-family: 'Segoe UI', sans-serif;">
+                            <strong>🏭 Склад ТехноОптТорг</strong><br/>
+                            📍 г. Екатеринбург, ул. Ленина, 10<br/>
+                            📞 +7 (343) 123-45-67<br/>
+                            ⏰ Пн-Пт: 9:00-19:00, Сб: 10:00-16:00<br/>
+                            <i>Самовывоз и отгрузка товаров</i>
+                        </div>
+                    `
+                }, {
+                    preset: 'islands#redWarehouseIcon',
+                    iconColor: '#9b59b6'
+                });
+                
+                myMap.geoObjects.add(warehousePlacemark);
+                
+                // Добавляем небольшой ореол вокруг склада (круг)
+                const circle = new ymaps.Circle([warehouseCoords, 100], {
+                    hintContent: 'Зона склада',
+                    balloonContent: 'Территория склада ТехноОптТорг'
+                }, {
+                    fillColor: 'rgba(155, 89, 182, 0.15)',
+                    strokeColor: '#9b59b6',
+                    strokeWidth: 2,
+                    strokeOpacity: 0.7
+                });
+                
+                myMap.geoObjects.add(circle);
+                
+            } catch (error) {
+                console.error('Ошибка инициализации карты:', error);
+                document.getElementById('warehouseMap').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;background:#f0f0f0;color:#666;">⚠️ Не удалось загрузить карту. Проверьте подключение к интернету.</div>';
+            }
+        }
+        
+        // Запускаем карту после загрузки API Яндекс.Карт
+        ymaps.ready(initMap);
+
+        // ================== ЛОГИКА РАБОТЫ С ОБРАЩЕНИЯМИ ==================
         let appeals = [];
         let nextId = 1;
         let currentSort = { column: null, direction: 'asc' };
@@ -1062,13 +1205,10 @@
 
         document.getElementById('date').value = getCurrentDate();
 
-        // ================== НОВАЯ ФУНКЦИЯ: ОТПРАВКА ДАННЫХ В 1С ==================
+        // ================== ФУНКЦИЯ: ОТПРАВКА ДАННЫХ В 1С ==================
         async function sendTo1C(formData) {
-            // <<<<< ВАЖНО: НАСТРОЙТЕ ЭТОТ АДРЕС >>>>> 
-            // Укажите здесь URL вашего HTTP-сервиса в 1С
             const ONE_S_URL = 'http://192.168.1.195/tehnoptorg/hs/ОбращенияСайта/orders'; 
             
-            // Показываем индикатор загрузки на кнопке
             const submitBtn = document.querySelector('#appealForm .btn-submit');
             const originalBtnText = submitBtn.innerHTML;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Отправка...';
@@ -1090,8 +1230,6 @@
 
                 const result = await response.json();
                 console.log('Успешно отправлено в 1С:', result);
-                
-                // Показываем успешное уведомление
                 showToast(`✅ Обращение отправлено в 1С! Номер: ${result.documentNumber || 'создан'}`);
                 return true;
                 
@@ -1100,13 +1238,11 @@
                 showToast(`❌ Ошибка отправки в 1С: ${error.message}. Данные сохранены локально.`, 'error');
                 return false;
             } finally {
-                // Возвращаем кнопку в исходное состояние
                 submitBtn.innerHTML = originalBtnText;
                 submitBtn.disabled = false;
             }
         }
 
-        // Модифицированная функция showToast с поддержкой типа ошибки
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
             toast.className = 'toast';
@@ -1120,11 +1256,10 @@
             setTimeout(() => toast.remove(), 5000);
         }
 
-        // ОБРАБОТЧИК ФОРМЫ (отправка в 1С + локальное сохранение)
+        // ОБРАБОТЧИК ФОРМЫ
         document.getElementById('appealForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            // Собираем данные из формы
             const formData = {
                 date: getCurrentDate(),
                 name: document.getElementById('name').value,
@@ -1136,10 +1271,8 @@
                 status: 'Новое'
             };
             
-            // === ОТПРАВКА В 1С (АСИНХРОННО) ===
-            const sentTo1C = await sendTo1C(formData);
+            await sendTo1C(formData);
             
-            // === ЛОКАЛЬНОЕ СОХРАНЕНИЕ (всегда, как резервная копия) ===
             const newAppeal = {
                 id: nextId++,
                 ...formData
@@ -1150,17 +1283,10 @@
             renderTable();
             updateStats();
             
-            // Очищаем форму
             document.getElementById('appealForm').reset();
             document.getElementById('date').value = getCurrentDate();
-            
-            // Дополнительное уведомление, если в 1С отправить не удалось
-            if (!sentTo1C) {
-                showToast('Обращение сохранено локально. При открытии 1С оно будет синхронизировано.', 'info');
-            }
         });
 
-        // ================== ОСТАЛЬНЫЕ ФУНКЦИИ (БЕЗ ИЗМЕНЕНИЙ) ==================
         function renderTable() {
             const tbody = document.getElementById('appealsList');
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
