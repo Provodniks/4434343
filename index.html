@@ -1002,12 +1002,13 @@
         }
 
         .warning-message {
-            background: rgba(243,156,18,0.2);
-            color: #e67e22;
+            background: rgba(155,89,182,0.2);
+            color: #9b59b6;
             padding: 10px;
             border-radius: 10px;
             margin: 10px 0;
             font-size: 0.9rem;
+            border: 1px solid #9b59b6;
         }
 
         .quantity-buttons {
@@ -1051,7 +1052,7 @@
         }
 
         .toast.warning {
-            background: linear-gradient(135deg, #f39c12, #e67e22);
+            background: linear-gradient(135deg, #9b59b6, #7b3f9a);
         }
 
         @keyframes slideInRight {
@@ -1378,7 +1379,7 @@
             { id: 12, name: "Кофеварка Bosch TKA3A034", category: "coffee", price: 4490, stock: 18, img: "images/kofe_b.jpg" }
         ];
 
-        // Данные складов (исправленные координаты)
+        // Данные складов
         const warehouses = {
             metal: {
                 name: "Склад на Металлургов, 12",
@@ -1403,7 +1404,12 @@
         let cart = [];
         let pendingProduct = null;
         let pendingType = null;
-        let hasShownWarning = false; // Флаг для предупреждения
+        let hasShownWarning = false;
+
+        function getCurrentCartQuantity(productId) {
+            const item = cart.find(item => item.id === productId);
+            return item ? item.quantity : 0;
+        }
 
         function saveCart() {
             localStorage.setItem('techopt_cart', JSON.stringify(cart));
@@ -1463,6 +1469,10 @@
                 if (newQuantity <= 0) {
                     cart.splice(index, 1);
                 } else {
+                    const product = products.find(p => p.id === productId);
+                    if (newQuantity > product.stock) {
+                        showToast(`⚠️ Внимание! Вы заказываете ${newQuantity} шт., но в наличии только ${product.stock} шт. Заказ будет собираться дольше.`, 'warning');
+                    }
                     cart[index].quantity = newQuantity;
                 }
                 saveCart();
@@ -1646,14 +1656,17 @@
             
             const price = isWholesale ? Math.round(pendingProduct.price * 0.95) : pendingProduct.price;
             
-            // Если количество превышает остаток
-            if (quantity > pendingProduct.stock) {
+            // Получаем текущее количество в корзине
+            const currentQuantity = getCurrentCartQuantity(pendingProduct.id);
+            const totalAfterAdd = currentQuantity + quantity;
+            
+            // Проверяем общее количество с учетом уже имеющегося в корзине
+            if (totalAfterAdd > pendingProduct.stock) {
                 if (!hasShownWarning) {
-                    // Показываем предупреждение, но НЕ блокируем добавление
-                    document.getElementById('warningMessage').innerHTML = `⚠️ Внимание! Вы заказываете ${quantity} шт., но в наличии только ${pendingProduct.stock} шт. Заказ будет собираться дольше обычного. Нажмите "Добавить в корзину" еще раз для подтверждения.`;
+                    document.getElementById('warningMessage').innerHTML = `⚠️ Внимание! В корзине уже ${currentQuantity} шт. Вы добавляете еще ${quantity} шт. Итого будет ${totalAfterAdd} шт., но в наличии только ${pendingProduct.stock} шт. Заказ будет собираться дольше обычного. Нажмите "Добавить в корзину" еще раз для подтверждения.`;
                     document.getElementById('warningMessage').style.display = 'block';
                     hasShownWarning = true;
-                    showToast(`⚠️ В наличии только ${pendingProduct.stock} шт. из ${quantity}. Заказ будет собираться дольше. Нажмите еще раз для подтверждения.`, 'warning');
+                    showToast(`⚠️ В корзине уже ${currentQuantity} шт. Итого будет ${totalAfterAdd} шт. (доступно ${pendingProduct.stock} шт.)`, 'warning');
                     return;
                 }
             }
@@ -1676,10 +1689,10 @@
             saveCart();
             updateCartUI();
             
-            if (quantity > pendingProduct.stock) {
-                showToast(`✅ ${pendingProduct.name} добавлен в корзину (${quantity} шт.). Внимание: доступно только ${pendingProduct.stock} шт., остальное под заказ.`, 'warning');
+            if (totalAfterAdd > pendingProduct.stock) {
+                showToast(`✅ ${pendingProduct.name} добавлен в корзину (теперь ${totalAfterAdd} шт.). Внимание: доступно только ${pendingProduct.stock} шт., остальное под заказ.`, 'warning');
             } else {
-                showToast(`✅ ${pendingProduct.name}\nДобавлено: ${quantity} шт. на сумму ${(price * quantity).toLocaleString()} ₽ (${isWholesale ? 'опт -5%' : 'розница'})`);
+                showToast(`✅ ${pendingProduct.name}\nДобавлено: ${quantity} шт. (всего в корзине: ${totalAfterAdd} шт.) на сумму ${(price * quantity).toLocaleString()} ₽ (${isWholesale ? 'опт -5%' : 'розница'})`);
             }
             
             closeQuantityModal();
