@@ -657,7 +657,6 @@
             color: #0e4d64;
         }
 
-        /* Модальные окна */
         .modal {
             display: none;
             position: fixed;
@@ -876,7 +875,6 @@
             font-size: 1.2rem;
         }
 
-        /* Модальное окно оформления заказа */
         .order-form {
             padding: 25px;
         }
@@ -1016,6 +1014,7 @@
             display: flex;
             gap: 15px;
             justify-content: center;
+            margin-top: 15px;
         }
 
         .quantity-confirm {
@@ -1025,6 +1024,7 @@
             border: none;
             border-radius: 30px;
             cursor: pointer;
+            font-weight: 600;
         }
 
         .quantity-cancel {
@@ -1034,6 +1034,7 @@
             border: none;
             border-radius: 30px;
             cursor: pointer;
+            font-weight: 600;
         }
 
         .toast {
@@ -1047,6 +1048,10 @@
             z-index: 1001;
             animation: slideInRight 0.3s ease;
             box-shadow: 0 0 15px rgba(155,89,182,0.5);
+        }
+
+        .toast.warning {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
         }
 
         @keyframes slideInRight {
@@ -1263,7 +1268,7 @@
                 </div>
                 <div class="cart-buttons">
                     <button class="btn-clear" onclick="clearCart()">Очистить</button>
-                    <button class="btn-checkout" onclick="openOrderModal()">Оформить заказ</button>
+                    <button class="btn-checkout" onclick="openOrderModal()">Подтвердить заказ</button>
                 </div>
             </div>
         </div>
@@ -1397,7 +1402,8 @@
         // Корзина
         let cart = [];
         let pendingProduct = null;
-        let pendingType = null; // 'retail' или 'wholesale'
+        let pendingType = null;
+        let hasShownWarning = false; // Флаг для предупреждения
 
         function saveCart() {
             localStorage.setItem('techopt_cart', JSON.stringify(cart));
@@ -1457,17 +1463,11 @@
                 if (newQuantity <= 0) {
                     cart.splice(index, 1);
                 } else {
-                    // Проверка на превышение остатка
-                    const product = products.find(p => p.id === productId);
-                    if (newQuantity > product.stock) {
-                        showToast(`Внимание! Запрошено ${newQuantity} шт., но в наличии только ${product.stock} шт. Заказ будет собираться дольше.`, 'warning');
-                    }
                     cart[index].quantity = newQuantity;
                 }
                 saveCart();
                 updateCartUI();
                 renderCartModal();
-                showToast(newQuantity > 0 ? 'Количество обновлено' : 'Товар удален из корзины');
             }
         }
 
@@ -1530,7 +1530,6 @@
         }
 
         function submitOrder() {
-            // Проверка обязательных полей
             const customerName = document.getElementById('customerName').value;
             const storageLocation = document.getElementById('storageLocation').value;
             const customerAddress = document.getElementById('customerAddress').value;
@@ -1545,7 +1544,6 @@
             const totalRub = getCartTotalRub();
             const convertedAmount = totalRub / exchangeRates[currency];
             
-            // Формирование данных для Excel
             const orderData = {
                 номерЗаказа: 'ORDER-' + Date.now(),
                 дата: new Date().toLocaleString(),
@@ -1566,10 +1564,8 @@
                 }))
             };
             
-            // Создание Excel файла
             const wb = XLSX.utils.book_new();
             
-            // Лист с информацией о заказе
             const orderInfo = [
                 ['Параметр', 'Значение'],
                 ['Номер заказа', orderData.номерЗаказа],
@@ -1586,7 +1582,6 @@
             const wsInfo = XLSX.utils.aoa_to_sheet(orderInfo);
             XLSX.utils.book_append_sheet(wb, wsInfo, 'Информация о заказе');
             
-            // Лист с товарами
             const goodsHeaders = ['Наименование', 'Количество', 'Цена за шт. (₽)', 'Сумма (₽)', 'Тип цены'];
             const goodsRows = orderData.товары.map(item => [
                 item.наименование, item.количество, item.ценаЗаШт, item.сумма, item.типЦены
@@ -1594,10 +1589,8 @@
             const wsGoods = XLSX.utils.aoa_to_sheet([goodsHeaders, ...goodsRows]);
             XLSX.utils.book_append_sheet(wb, wsGoods, 'Товары');
             
-            // Сохранение файла
             XLSX.writeFile(wb, `Заказ_${orderData.номерЗаказа}.xlsx`);
             
-            // Очистка корзины и закрытие модальных окон
             cart = [];
             saveCart();
             updateCartUI();
@@ -1606,13 +1599,13 @@
             
             showToast(`✅ Заказ оформлен! Файл Excel скачан. Номер заказа: ${orderData.номерЗаказа}`);
             
-            // Сброс формы
             document.getElementById('orderForm').reset();
         }
 
         function openQuantityModal(product, type) {
             pendingProduct = product;
             pendingType = type;
+            hasShownWarning = false;
             
             const isWholesale = (type === 'wholesale');
             const minQuantity = isWholesale ? 20 : 1;
@@ -1627,12 +1620,14 @@
                 `💰 Оптовая цена (от 20 шт): ${price.toLocaleString()} ₽/шт (скидка 5%)` : 
                 `💰 Розничная цена: ${price.toLocaleString()} ₽/шт`;
             
+            document.getElementById('warningMessage').style.display = 'none';
             document.getElementById('quantityModal').classList.add('active');
         }
 
         function closeQuantityModal() {
             pendingProduct = null;
             pendingType = null;
+            hasShownWarning = false;
             document.getElementById('quantityModal').classList.remove('active');
             document.getElementById('warningMessage').style.display = 'none';
         }
@@ -1651,13 +1646,19 @@
             
             const price = isWholesale ? Math.round(pendingProduct.price * 0.95) : pendingProduct.price;
             
-            // Предупреждение о превышении остатка
+            // Если количество превышает остаток
             if (quantity > pendingProduct.stock) {
-                document.getElementById('warningMessage').innerHTML = `⚠️ Внимание! Вы заказываете ${quantity} шт., но в наличии только ${pendingProduct.stock} шт. Заказ будет собираться дольше обычного.`;
-                document.getElementById('warningMessage').style.display = 'block';
-                return;
+                if (!hasShownWarning) {
+                    // Показываем предупреждение, но НЕ блокируем добавление
+                    document.getElementById('warningMessage').innerHTML = `⚠️ Внимание! Вы заказываете ${quantity} шт., но в наличии только ${pendingProduct.stock} шт. Заказ будет собираться дольше обычного. Нажмите "Добавить в корзину" еще раз для подтверждения.`;
+                    document.getElementById('warningMessage').style.display = 'block';
+                    hasShownWarning = true;
+                    showToast(`⚠️ В наличии только ${pendingProduct.stock} шт. из ${quantity}. Заказ будет собираться дольше. Нажмите еще раз для подтверждения.`, 'warning');
+                    return;
+                }
             }
             
+            // Добавляем в корзину
             const existingIndex = cart.findIndex(item => item.id === pendingProduct.id && item.type === pendingType);
             if (existingIndex !== -1) {
                 cart[existingIndex].quantity += quantity;
@@ -1674,7 +1675,13 @@
             
             saveCart();
             updateCartUI();
-            showToast(`✅ ${pendingProduct.name}\nДобавлено: ${quantity} шт. на сумму ${(price * quantity).toLocaleString()} ₽ (${isWholesale ? 'опт -5%' : 'розница'})`);
+            
+            if (quantity > pendingProduct.stock) {
+                showToast(`✅ ${pendingProduct.name} добавлен в корзину (${quantity} шт.). Внимание: доступно только ${pendingProduct.stock} шт., остальное под заказ.`, 'warning');
+            } else {
+                showToast(`✅ ${pendingProduct.name}\nДобавлено: ${quantity} шт. на сумму ${(price * quantity).toLocaleString()} ₽ (${isWholesale ? 'опт -5%' : 'розница'})`);
+            }
+            
             closeQuantityModal();
         }
 
@@ -1684,11 +1691,11 @@
             if (type === 'error') {
                 toast.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
             } else if (type === 'warning') {
-                toast.style.background = 'linear-gradient(135deg, #f39c12, #e67e22)';
+                toast.classList.add('warning');
             }
             toast.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-triangle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${message}`;
             document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 4000);
+            setTimeout(() => toast.remove(), 5000);
         }
 
         // Функции для карты
