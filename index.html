@@ -11,6 +11,9 @@
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
+    <!-- SheetJS для экспорта Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -25,7 +28,6 @@
             --neon-blue: #3498db;
             --neon-cyan: #00ffff;
             --accent: #9b59b6;
-            --accent-hover: #bb6bc9;
             --text-dark: #0a2a4a;
             --text-gray: #2c5282;
             --white: #ffffff;
@@ -426,7 +428,7 @@
 
         .catalog-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 30px;
             margin-bottom: 30px;
         }
@@ -464,10 +466,15 @@
         }
 
         .product-price {
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             font-weight: bold;
             color: #0e4d64;
-            margin: 10px 0;
+            margin: 5px 0;
+        }
+
+        .product-price small {
+            font-size: 0.8rem;
+            color: #2c5282;
         }
 
         .product-stock {
@@ -476,8 +483,26 @@
             margin-bottom: 15px;
         }
 
-        .btn-order {
-            width: 100%;
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn-retail {
+            flex: 1;
+            padding: 10px;
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 600;
+        }
+
+        .btn-wholesale {
+            flex: 1;
             padding: 10px;
             background: linear-gradient(135deg, #1a6f8f, #0e4d64);
             color: white;
@@ -488,7 +513,7 @@
             font-weight: 600;
         }
 
-        .btn-order:hover {
+        .btn-retail:hover, .btn-wholesale:hover {
             transform: scale(1.02);
             box-shadow: 0 0 15px rgba(26,111,143,0.5);
         }
@@ -560,14 +585,6 @@
             height: 100%;
         }
 
-        .map-address {
-            text-align: center;
-            color: white;
-            margin-top: 15px;
-            font-size: 0.9rem;
-            text-shadow: 0 0 3px var(--neon-purple);
-        }
-
         .warehouse-selector {
             background: linear-gradient(135deg, #e0f7fa, #b2ebf2);
             border-radius: 15px;
@@ -604,6 +621,14 @@
             transform: scale(1.05);
         }
 
+        .map-address {
+            text-align: center;
+            color: white;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            text-shadow: 0 0 3px var(--neon-purple);
+        }
+
         .contacts-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -632,6 +657,7 @@
             color: #0e4d64;
         }
 
+        /* Модальные окна */
         .modal {
             display: none;
             position: fixed;
@@ -660,8 +686,8 @@
             background: linear-gradient(135deg, #e0f7fa, #c8e6e9);
             border-radius: 24px;
             width: 90%;
-            max-width: 800px;
-            max-height: 80vh;
+            max-width: 900px;
+            max-height: 85vh;
             overflow-y: auto;
             animation: slideUp 0.3s ease;
             border: 2px solid var(--neon-purple);
@@ -709,7 +735,7 @@
 
         .cart-items {
             padding: 20px;
-            max-height: 400px;
+            max-height: 300px;
             overflow-y: auto;
         }
 
@@ -850,6 +876,81 @@
             font-size: 1.2rem;
         }
 
+        /* Модальное окно оформления заказа */
+        .order-form {
+            padding: 25px;
+        }
+
+        .order-form .form-group {
+            margin-bottom: 20px;
+        }
+
+        .order-form label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #0a2a4a;
+        }
+
+        .order-form input, .order-form select, .order-form textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #b2ebf2;
+            border-radius: 12px;
+            font-size: 14px;
+            transition: var(--transition);
+            font-family: inherit;
+            background: white;
+        }
+
+        .order-form input:focus, .order-form select:focus, .order-form textarea:focus {
+            outline: none;
+            border-color: #1a6f8f;
+            box-shadow: 0 0 8px rgba(26,111,143,0.3);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .currency-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .currency-row select {
+            width: auto;
+            min-width: 100px;
+        }
+
+        .order-summary {
+            background: rgba(26,111,143,0.1);
+            padding: 15px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .btn-submit-order {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--neon-purple), var(--neon-blue));
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: var(--transition);
+        }
+
+        .btn-submit-order:hover {
+            transform: scale(1.02);
+            box-shadow: 0 0 20px var(--neon-purple);
+        }
+
         .quantity-modal {
             display: none;
             position: fixed;
@@ -892,6 +993,23 @@
             border-radius: 12px;
             margin: 20px auto;
             display: block;
+        }
+
+        .price-info {
+            font-size: 1.1rem;
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(26,111,143,0.1);
+            border-radius: 10px;
+        }
+
+        .warning-message {
+            background: rgba(243,156,18,0.2);
+            color: #e67e22;
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+            font-size: 0.9rem;
         }
 
         .quantity-buttons {
@@ -978,6 +1096,9 @@
             }
             .cart-item-sum {
                 text-align: center;
+            }
+            .form-row {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -1142,8 +1263,74 @@
                 </div>
                 <div class="cart-buttons">
                     <button class="btn-clear" onclick="clearCart()">Очистить</button>
-                    <button class="btn-checkout" onclick="checkout()">Оформить заказ</button>
+                    <button class="btn-checkout" onclick="openOrderModal()">Оформить заказ</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно оформления заказа -->
+    <div id="orderModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-file-invoice"></i> Оформление заказа</h2>
+                <span class="close-modal" onclick="closeOrderModal()">&times;</span>
+            </div>
+            <div class="order-form">
+                <form id="orderForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Заказчик *</label>
+                            <input type="text" id="customerName" required placeholder="Иванов Иван Иванович">
+                        </div>
+                        <div class="form-group">
+                            <label>Место хранения заказа *</label>
+                            <select id="storageLocation" required>
+                                <option value="">Выберите склад</option>
+                                <option value="Металлургов, 12">Склад на Металлургов, 12</option>
+                                <option value="Мира, 1">Склад на Мира, 1</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Валюта оплаты *</label>
+                            <div class="currency-row">
+                                <select id="currency" onchange="updateCurrency()">
+                                    <option value="RUB">🇷🇺 RUB (Рубли)</option>
+                                    <option value="USD">🇺🇸 USD (Доллары)</option>
+                                    <option value="EUR">🇪🇺 EUR (Евро)</option>
+                                </select>
+                                <span style="font-size: 0.8rem; color: #666;">Курс +3%</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Сумма оплаты</label>
+                            <input type="text" id="paymentAmount" readonly style="background: #e8f0fe; font-weight: bold;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Адрес покупателя *</label>
+                        <input type="text" id="customerAddress" required placeholder="г. Екатеринбург, ул. Примерная, д. 1, кв. 1">
+                    </div>
+                    <div class="form-group">
+                        <label>Телефон *</label>
+                        <input type="tel" id="customerPhone" required placeholder="+7 (999) 123-45-67">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="customerEmail" placeholder="client@example.com">
+                    </div>
+                    <div class="order-summary">
+                        <strong>Состав заказа:</strong>
+                        <div id="orderSummaryItems" style="margin-top: 10px; font-size: 0.9rem;"></div>
+                        <hr style="margin: 10px 0;">
+                        <div><strong>Итого:</strong> <span id="orderTotalRub">0</span> ₽</div>
+                    </div>
+                    <button type="button" class="btn-submit-order" onclick="submitOrder()">
+                        <i class="fas fa-check-circle"></i> Подтвердить заказ и скачать Excel
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -1153,14 +1340,23 @@
         <div class="quantity-modal-content">
             <h3 id="quantityProductName"></h3>
             <input type="number" id="quantityInput" class="quantity-input" value="1" min="1" max="999">
+            <div class="price-info" id="priceInfo"></div>
+            <div id="warningMessage" class="warning-message" style="display: none;"></div>
             <div class="quantity-buttons">
                 <button class="quantity-cancel" onclick="closeQuantityModal()">Отмена</button>
-                <button class="quantity-confirm" onclick="confirmAddToCart()">Добавить</button>
+                <button class="quantity-confirm" onclick="confirmAddToCart()">Добавить в корзину</button>
             </div>
         </div>
     </div>
 
     <script>
+        // Курсы валют (базовый курс +3%)
+        const exchangeRates = {
+            RUB: 1,
+            USD: 92.5 * 1.03,
+            EUR: 99.8 * 1.03
+        };
+
         // Товары
         const products = [
             { id: 1, name: "Микроволновая печь Samsung MG23K3575AK", category: "microwave", price: 8990, stock: 35, img: "images/sams_micro.jpg" },
@@ -1177,17 +1373,17 @@
             { id: 12, name: "Кофеварка Bosch TKA3A034", category: "coffee", price: 4490, stock: 18, img: "images/kofe_b.jpg" }
         ];
 
-        // Данные складов
+        // Данные складов (исправленные координаты)
         const warehouses = {
             metal: {
                 name: "Склад на Металлургов, 12",
-                coords: [56.8123, 60.6248],
+                coords: [56.827197, 60.551921],
                 address: "г. Екатеринбург, ул. Металлургов, 12",
                 deliveryRadius: 5000
             },
             mira: {
                 name: "Склад на Мира, 1",
-                coords: [56.8335, 60.6145],
+                coords: [56.853149, 60.647035],
                 address: "г. Екатеринбург, ул. Мира, 1",
                 deliveryRadius: 5000
             }
@@ -1201,6 +1397,7 @@
         // Корзина
         let cart = [];
         let pendingProduct = null;
+        let pendingType = null; // 'retail' или 'wholesale'
 
         function saveCart() {
             localStorage.setItem('techopt_cart', JSON.stringify(cart));
@@ -1222,13 +1419,17 @@
             document.getElementById('cartTotal').textContent = totalSum.toLocaleString() + ' ₽';
         }
 
+        function getCartTotalRub() {
+            return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        }
+
         function renderCartModal() {
             const cartItemsDiv = document.getElementById('cartItems');
             const totalSum = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             document.getElementById('modalTotalSum').textContent = totalSum.toLocaleString() + ' ₽';
             
             if (cart.length === 0) {
-                cartItemsDiv.innerHTML = '<div class="empty-cart"><i class="fas fa-shopping-cart" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>Корзина пуста<br>Добавьте товары через кнопку "Запросить опт"</div>';
+                cartItemsDiv.innerHTML = '<div class="empty-cart"><i class="fas fa-shopping-cart" style="font-size: 3rem; margin-bottom: 15px; display: block;"></i>Корзина пуста<br>Добавьте товары через кнопки "Розница" или "Опт"</div>';
                 return;
             }
             
@@ -1236,7 +1437,7 @@
                 <div class="cart-item" data-id="${item.id}">
                     <div class="cart-item-info">
                         <div class="cart-item-title">${item.name}</div>
-                        <div class="cart-item-price">${item.price.toLocaleString()} ₽ / шт</div>
+                        <div class="cart-item-price">${item.price.toLocaleString()} ₽ / шт (${item.type === 'wholesale' ? 'опт -5%' : 'розница'})</div>
                     </div>
                     <div class="cart-item-quantity">
                         <button onclick="changeQuantity(${item.id}, -1)">-</button>
@@ -1256,6 +1457,11 @@
                 if (newQuantity <= 0) {
                     cart.splice(index, 1);
                 } else {
+                    // Проверка на превышение остатка
+                    const product = products.find(p => p.id === productId);
+                    if (newQuantity > product.stock) {
+                        showToast(`Внимание! Запрошено ${newQuantity} шт., но в наличии только ${product.stock} шт. Заказ будет собираться дольше.`, 'warning');
+                    }
                     cart[index].quantity = newQuantity;
                 }
                 saveCart();
@@ -1291,70 +1497,185 @@
             document.getElementById('cartModal').classList.remove('active');
         }
 
-        function openQuantityModal(product) {
+        function openOrderModal() {
+            if (cart.length === 0) {
+                showToast('Корзина пуста. Добавьте товары.', 'error');
+                return;
+            }
+            updateOrderSummary();
+            document.getElementById('orderModal').classList.add('active');
+        }
+
+        function closeOrderModal() {
+            document.getElementById('orderModal').classList.remove('active');
+        }
+
+        function updateOrderSummary() {
+            const itemsDiv = document.getElementById('orderSummaryItems');
+            const totalRub = getCartTotalRub();
+            
+            itemsDiv.innerHTML = cart.map(item => 
+                `<div>${item.name} - ${item.quantity} шт. × ${item.price.toLocaleString()} ₽ = ${(item.price * item.quantity).toLocaleString()} ₽ (${item.type === 'wholesale' ? 'опт' : 'розница'})</div>`
+            ).join('');
+            
+            document.getElementById('orderTotalRub').textContent = totalRub.toLocaleString();
+            updateCurrency();
+        }
+
+        function updateCurrency() {
+            const currency = document.getElementById('currency').value;
+            const totalRub = getCartTotalRub();
+            const convertedAmount = totalRub / exchangeRates[currency];
+            document.getElementById('paymentAmount').value = convertedAmount.toLocaleString() + ' ' + currency;
+        }
+
+        function submitOrder() {
+            // Проверка обязательных полей
+            const customerName = document.getElementById('customerName').value;
+            const storageLocation = document.getElementById('storageLocation').value;
+            const customerAddress = document.getElementById('customerAddress').value;
+            const customerPhone = document.getElementById('customerPhone').value;
+            
+            if (!customerName || !storageLocation || !customerAddress || !customerPhone) {
+                showToast('Заполните все обязательные поля!', 'error');
+                return;
+            }
+            
+            const currency = document.getElementById('currency').value;
+            const totalRub = getCartTotalRub();
+            const convertedAmount = totalRub / exchangeRates[currency];
+            
+            // Формирование данных для Excel
+            const orderData = {
+                номерЗаказа: 'ORDER-' + Date.now(),
+                дата: new Date().toLocaleString(),
+                заказчик: customerName,
+                телефон: customerPhone,
+                email: document.getElementById('customerEmail').value || '-',
+                адрес: customerAddress,
+                складХранения: storageLocation,
+                валюта: currency,
+                суммаВВалюте: convertedAmount.toFixed(2),
+                суммаВРублях: totalRub,
+                товары: cart.map(item => ({
+                    наименование: item.name,
+                    количество: item.quantity,
+                    ценаЗаШт: item.price,
+                    сумма: item.price * item.quantity,
+                    типЦены: item.type === 'wholesale' ? 'оптовая (-5%)' : 'розничная'
+                }))
+            };
+            
+            // Создание Excel файла
+            const wb = XLSX.utils.book_new();
+            
+            // Лист с информацией о заказе
+            const orderInfo = [
+                ['Параметр', 'Значение'],
+                ['Номер заказа', orderData.номерЗаказа],
+                ['Дата', orderData.дата],
+                ['Заказчик', orderData.заказчик],
+                ['Телефон', orderData.телефон],
+                ['Email', orderData.email],
+                ['Адрес доставки', orderData.адрес],
+                ['Склад хранения', orderData.складХранения],
+                ['Валюта', orderData.валюта],
+                ['Сумма в валюте', orderData.суммаВВалюте],
+                ['Сумма в рублях', orderData.суммаВРублях]
+            ];
+            const wsInfo = XLSX.utils.aoa_to_sheet(orderInfo);
+            XLSX.utils.book_append_sheet(wb, wsInfo, 'Информация о заказе');
+            
+            // Лист с товарами
+            const goodsHeaders = ['Наименование', 'Количество', 'Цена за шт. (₽)', 'Сумма (₽)', 'Тип цены'];
+            const goodsRows = orderData.товары.map(item => [
+                item.наименование, item.количество, item.ценаЗаШт, item.сумма, item.типЦены
+            ]);
+            const wsGoods = XLSX.utils.aoa_to_sheet([goodsHeaders, ...goodsRows]);
+            XLSX.utils.book_append_sheet(wb, wsGoods, 'Товары');
+            
+            // Сохранение файла
+            XLSX.writeFile(wb, `Заказ_${orderData.номерЗаказа}.xlsx`);
+            
+            // Очистка корзины и закрытие модальных окон
+            cart = [];
+            saveCart();
+            updateCartUI();
+            closeOrderModal();
+            closeCartModal();
+            
+            showToast(`✅ Заказ оформлен! Файл Excel скачан. Номер заказа: ${orderData.номерЗаказа}`);
+            
+            // Сброс формы
+            document.getElementById('orderForm').reset();
+        }
+
+        function openQuantityModal(product, type) {
             pendingProduct = product;
+            pendingType = type;
+            
+            const isWholesale = (type === 'wholesale');
+            const minQuantity = isWholesale ? 20 : 1;
+            const price = isWholesale ? Math.round(product.price * 0.95) : product.price;
+            
             document.getElementById('quantityProductName').textContent = product.name;
-            document.getElementById('quantityInput').value = 1;
+            document.getElementById('quantityInput').value = minQuantity;
+            document.getElementById('quantityInput').min = minQuantity;
+            
+            const priceInfo = document.getElementById('priceInfo');
+            priceInfo.innerHTML = isWholesale ? 
+                `💰 Оптовая цена (от 20 шт): ${price.toLocaleString()} ₽/шт (скидка 5%)` : 
+                `💰 Розничная цена: ${price.toLocaleString()} ₽/шт`;
+            
             document.getElementById('quantityModal').classList.add('active');
         }
 
         function closeQuantityModal() {
             pendingProduct = null;
+            pendingType = null;
             document.getElementById('quantityModal').classList.remove('active');
+            document.getElementById('warningMessage').style.display = 'none';
         }
 
         function confirmAddToCart() {
             if (!pendingProduct) return;
             
             const quantity = parseInt(document.getElementById('quantityInput').value);
-            if (isNaN(quantity) || quantity < 1) {
-                showToast('Введите корректное количество', 'error');
+            const isWholesale = (pendingType === 'wholesale');
+            const minQuantity = isWholesale ? 20 : 1;
+            
+            if (isNaN(quantity) || quantity < minQuantity) {
+                showToast(`Минимальное количество для ${isWholesale ? 'опта' : 'розницы'}: ${minQuantity} шт.`, 'error');
                 return;
             }
             
+            const price = isWholesale ? Math.round(pendingProduct.price * 0.95) : pendingProduct.price;
+            
+            // Предупреждение о превышении остатка
             if (quantity > pendingProduct.stock) {
-                showToast(`Доступно только ${pendingProduct.stock} шт.`, 'error');
+                document.getElementById('warningMessage').innerHTML = `⚠️ Внимание! Вы заказываете ${quantity} шт., но в наличии только ${pendingProduct.stock} шт. Заказ будет собираться дольше обычного.`;
+                document.getElementById('warningMessage').style.display = 'block';
                 return;
             }
             
-            const existingIndex = cart.findIndex(item => item.id === pendingProduct.id);
+            const existingIndex = cart.findIndex(item => item.id === pendingProduct.id && item.type === pendingType);
             if (existingIndex !== -1) {
-                const newQuantity = cart[existingIndex].quantity + quantity;
-                if (newQuantity > pendingProduct.stock) {
-                    showToast(`Доступно только ${pendingProduct.stock} шт.`, 'error');
-                    closeQuantityModal();
-                    return;
-                }
-                cart[existingIndex].quantity = newQuantity;
+                cart[existingIndex].quantity += quantity;
             } else {
                 cart.push({
                     id: pendingProduct.id,
                     name: pendingProduct.name,
-                    price: pendingProduct.price,
-                    quantity: quantity
+                    price: price,
+                    quantity: quantity,
+                    type: pendingType,
+                    originalPrice: pendingProduct.price
                 });
             }
             
             saveCart();
             updateCartUI();
-            showToast(`✅ ${pendingProduct.name}\nДобавлено: ${quantity} шт. на сумму ${(pendingProduct.price * quantity).toLocaleString()} ₽`);
+            showToast(`✅ ${pendingProduct.name}\nДобавлено: ${quantity} шт. на сумму ${(price * quantity).toLocaleString()} ₽ (${isWholesale ? 'опт -5%' : 'розница'})`);
             closeQuantityModal();
-        }
-
-        function checkout() {
-            if (cart.length === 0) {
-                showToast('Корзина пуста. Добавьте товары.', 'error');
-                return;
-            }
-            
-            const totalSum = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const orderDetails = cart.map(item => `${item.name} - ${item.quantity} шт. = ${(item.price * item.quantity).toLocaleString()} ₽`).join('\n');
-            
-            const warehouse = warehouses[currentWarehouse];
-            const message = `Здравствуйте! Хочу оформить оптовый заказ:\n\n${orderDetails}\n\nОбщая сумма: ${totalSum.toLocaleString()} ₽\n\nСамовывоз со склада: ${warehouse.address}\n\nКонтактные данные:\nИмя: \nТелефон: \nEmail: `;
-            
-            window.open(`https://wa.me/79121234567?text=${encodeURIComponent(message)}`, '_blank');
-            showToast('Переход в WhatsApp для оформления заказа');
         }
 
         function showToast(message, type = 'success') {
@@ -1362,13 +1683,15 @@
             toast.className = 'toast';
             if (type === 'error') {
                 toast.style.background = 'linear-gradient(135deg, #e74c3c, #c0392b)';
+            } else if (type === 'warning') {
+                toast.style.background = 'linear-gradient(135deg, #f39c12, #e67e22)';
             }
-            toast.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${message}`;
+            toast.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-triangle' : type === 'warning' ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${message}`;
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 4000);
         }
 
-        // Функции для карты с несколькими складами
+        // Функции для карты
         function getZoneColor(distanceKm) {
             if (distanceKm < 1) return { fill: 'rgba(155,89,182,0.15)', stroke: '#9b59b6' };
             if (distanceKm < 2) return { fill: 'rgba(155,89,182,0.12)', stroke: '#9b59b6' };
@@ -1413,13 +1736,11 @@
         function updateMapForWarehouse(warehouseKey) {
             const warehouse = warehouses[warehouseKey];
             
-            // Удаляем старые метки и зоны
             currentMarkers.forEach(marker => map.geoObjects.remove(marker));
             currentZones.forEach(zone => map.geoObjects.remove(zone));
             currentMarkers = [];
             currentZones = [];
             
-            // Добавляем метку для выбранного склада
             const marker = new ymaps.Placemark(warehouse.coords, {
                 hintContent: `🏪 ${warehouse.name}`,
                 balloonContent: `<b>ТехноОптТорг</b><br/>${warehouse.address}<br/>Склад оптовой техники<br/>☎ +7 (343) 215-40-50`
@@ -1429,7 +1750,6 @@
             map.geoObjects.add(marker);
             currentMarkers.push(marker);
             
-            // Добавляем зоны доставки
             const radii = [1000, 2000, 3000, 4000, 5000];
             
             for (let i = 0; i < radii.length; i++) {
@@ -1456,10 +1776,7 @@
                 }
             }
             
-            // Центрируем карту на выбранном складе
             map.setCenter(warehouse.coords, 14);
-            
-            // Обновляем текст адреса
             document.getElementById('mapAddress').innerHTML = `<i class="fas fa-map-marker-alt"></i> ${warehouse.address} | Самовывоз: пн-пт 9:00-18:00`;
         }
 
@@ -1467,7 +1784,6 @@
             currentWarehouse = warehouseKey;
             updateMapForWarehouse(warehouseKey);
             
-            // Обновляем активную кнопку
             document.querySelectorAll('.warehouse-btn').forEach(btn => {
                 btn.classList.remove('active');
                 if (btn.dataset.warehouse === warehouseKey) {
@@ -1487,15 +1803,22 @@
             );
             
             const catalogGrid = document.getElementById("catalogGrid");
-            catalogGrid.innerHTML = filtered.map(p => `
-                <div class="product-card">
-                    <img src="${p.img}" class="product-img" alt="${p.name}" onerror="this.src='https://via.placeholder.com/300x160?text=${encodeURIComponent(p.name)}'">
-                    <h3 class="product-title">${p.name}</h3>
-                    <div class="product-price">${p.price.toLocaleString()} ₽</div>
-                    <div class="product-stock">В наличии: ${p.stock} шт.</div>
-                    <button class="btn-order" onclick="openQuantityModal({id:${p.id}, name:'${p.name.replace(/'/g, "\\'")}', price:${p.price}, stock:${p.stock}})">Запросить опт</button>
-                </div>
-            `).join("");
+            catalogGrid.innerHTML = filtered.map(p => {
+                const wholesalePrice = Math.round(p.price * 0.95);
+                return `
+                    <div class="product-card">
+                        <img src="${p.img}" class="product-img" alt="${p.name}" onerror="this.src='https://via.placeholder.com/300x160?text=${encodeURIComponent(p.name)}'">
+                        <h3 class="product-title">${p.name}</h3>
+                        <div class="product-price">Розница: ${p.price.toLocaleString()} ₽</div>
+                        <div class="product-price">Опт (от 20 шт): ${wholesalePrice.toLocaleString()} ₽ <small>(-5%)</small></div>
+                        <div class="product-stock">В наличии: ${p.stock} шт.</div>
+                        <div class="btn-group">
+                            <button class="btn-retail" onclick="openQuantityModal({id:${p.id}, name:'${p.name.replace(/'/g, "\\'")}', price:${p.price}, stock:${p.stock}}, 'retail')">🛒 Розница</button>
+                            <button class="btn-wholesale" onclick="openQuantityModal({id:${p.id}, name:'${p.name.replace(/'/g, "\\'")}', price:${p.price}, stock:${p.stock}}, 'wholesale')">📦 Опт (-5%)</button>
+                        </div>
+                    </div>
+                `;
+            }).join("");
         }
 
         // Фильтры
@@ -1511,18 +1834,18 @@
         document.getElementById('searchInput').addEventListener('input', renderCatalog);
         document.getElementById('cartBtn').addEventListener('click', openCartModal);
 
-        // Обработчики для переключения складов
         document.querySelectorAll('.warehouse-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 switchWarehouse(btn.dataset.warehouse);
             });
         });
 
-        // Закрытие модальных окон
         window.onclick = function(event) {
             const modal = document.getElementById('cartModal');
+            const orderModal = document.getElementById('orderModal');
             const quantityModal = document.getElementById('quantityModal');
             if (event.target === modal) closeCartModal();
+            if (event.target === orderModal) closeOrderModal();
             if (event.target === quantityModal) closeQuantityModal();
         }
 
